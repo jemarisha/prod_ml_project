@@ -36,12 +36,19 @@ def configure_mlflow(experiment_name: str) -> str:
 
 
 def git_revision() -> dict[str, str]:
+    # git ищется в PATH намеренно: путь к нему разный на Windows, Linux и в CI.
     try:
         commit = subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+            ["git", "rev-parse", "HEAD"],  # noqa: S607
+            capture_output=True,
+            text=True,
+            check=True,
         ).stdout.strip()
         status = subprocess.run(
-            ["git", "status", "--porcelain"], capture_output=True, text=True, check=True
+            ["git", "status", "--porcelain"],  # noqa: S607
+            capture_output=True,
+            text=True,
+            check=True,
         ).stdout
     except (OSError, subprocess.CalledProcessError):
         return {"git_commit": "unknown", "git_dirty": "unknown"}

@@ -163,7 +163,9 @@ def flatten_params(config: ExperimentConfig) -> dict[str, str]:
         elif isinstance(value, list) and value and isinstance(value[0], dict):
             flat[prefix] = json.dumps(value, ensure_ascii=False)
         else:
-            flat[prefix] = json.dumps(value, ensure_ascii=False) if isinstance(value, list) else str(value)
+            flat[prefix] = (
+                json.dumps(value, ensure_ascii=False) if isinstance(value, list) else str(value)
+            )
 
     walk("", config.model_dump(mode="json"))
     return flat

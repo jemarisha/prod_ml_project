@@ -6,8 +6,12 @@ from youarebot.features import build_participant_features, is_doubled, numeric_f
 
 def _dialog(*texts_by_participant: tuple[int, str]):
     return dialogs_to_frame(
-        {"d": [{"text": text, "message": i, "participant_index": p}
-               for i, (p, text) in enumerate(texts_by_participant)]}
+        {
+            "d": [
+                {"text": text, "message": i, "participant_index": p}
+                for i, (p, text) in enumerate(texts_by_participant)
+            ]
+        }
     )
 
 
@@ -21,8 +25,12 @@ def test_echo_of_previous_message_is_detected():
 
 @pytest.mark.parametrize(
     ("text", "expected"),
-    [("норм\n\nнорм", True), ("saman saman \n\nsaman saman", True),
-     ("норм\n\nне норм", False), ("просто текст", False)],
+    [
+        ("норм\n\nнорм", True),
+        ("saman saman \n\nsaman saman", True),
+        ("норм\n\nне норм", False),
+        ("просто текст", False),
+    ],
 )
 def test_doubled_message(text, expected):
     assert is_doubled(text) is expected

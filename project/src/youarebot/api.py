@@ -73,7 +73,9 @@ def predict(request: DialogRequest) -> DialogResponse:
         dialog_id=request.dialog_id,
         model_uri=MODEL_URI,
         predictions=[
-            ParticipantPrediction(participant_index=int(row.participant_index), is_bot=float(row.is_bot))
+            ParticipantPrediction(
+                participant_index=int(row.participant_index), is_bot=float(row.is_bot)
+            )
             for row in predictions.itertuples()
         ],
     )

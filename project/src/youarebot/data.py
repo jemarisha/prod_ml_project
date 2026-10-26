@@ -70,9 +70,7 @@ def load_dataset(config: DataConfig) -> Dataset:
 def participant_grid(messages: pd.DataFrame) -> pd.DataFrame:
     """Все участники всех диалогов, включая тех, кто не написал ни одной реплики."""
     dialog_ids = messages["dialog_id"].drop_duplicates()
-    grid = pd.MultiIndex.from_product(
-        [dialog_ids, PARTICIPANTS_PER_DIALOG], names=PARTICIPANT_KEY
-    )
+    grid = pd.MultiIndex.from_product([dialog_ids, PARTICIPANTS_PER_DIALOG], names=PARTICIPANT_KEY)
     return grid.to_frame(index=False)
 
 

@@ -29,22 +29,26 @@ def _latest_run_per_name(runs: list[Run], metric: str) -> list[Run]:
 
 
 def _ensure_registered(client: MlflowClient, model_name: str, run: Run) -> str:
-    existing = client.search_model_versions(
-        f"name='{model_name}' and run_id='{run.info.run_id}'"
-    )
+    existing = client.search_model_versions(f"name='{model_name}' and run_id='{run.info.run_id}'")
     if existing:
         return existing[0].version
     version = mlflow.register_model(run.data.tags["model_uri"], model_name).version
     client.set_model_version_tag(model_name, version, "run_name", run.info.run_name)
-    client.set_model_version_tag(model_name, version, "data_version", run.data.tags.get("data_version", ""))
+    client.set_model_version_tag(
+        model_name, version, "data_version", run.data.tags.get("data_version", "")
+    )
     return version
 
 
-def promote_best_runs(experiment_name: str, model_name: str, metric: str = "cv_logloss") -> list[Promotion]:
+def promote_best_runs(
+    experiment_name: str, model_name: str, metric: str = "cv_logloss"
+) -> list[Promotion]:
     client = MlflowClient()
     experiment = client.get_experiment_by_name(experiment_name)
     if experiment is None:
-        raise RuntimeError(f"Эксперимент {experiment_name!r} не найден — сначала запустите обучение")
+        raise RuntimeError(
+            f"Эксперимент {experiment_name!r} не найден — сначала запустите обучение"
+        )
     runs = client.search_runs(
         [experiment.experiment_id], filter_string="attributes.status = 'FINISHED'", max_results=5000
     )

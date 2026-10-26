@@ -183,12 +183,18 @@ def run_experiment(config: ExperimentConfig) -> ExperimentResult:
                 yaml.safe_dump(config.model_dump(mode="json"), allow_unicode=True, sort_keys=False),
                 encoding="utf-8",
             )
-            (tmp / "data_checksums.json").write_text(json.dumps(checksums, indent=2), encoding="utf-8")
+            (tmp / "data_checksums.json").write_text(
+                json.dumps(checksums, indent=2), encoding="utf-8"
+            )
             train[PARTICIPANT_KEY].assign(
                 fold=folds, is_bot=target, proba_raw=oof_raw, proba=oof
             ).to_csv(tmp / "oof_predictions.csv", index=False)
-            save_diagnostics(target, oof, f"{config.run_name}: CV logloss {metrics['cv_logloss']:.4f}",
-                             tmp / "diagnostics.png")
+            save_diagnostics(
+                target,
+                oof,
+                f"{config.run_name}: CV logloss {metrics['cv_logloss']:.4f}",
+                tmp / "diagnostics.png",
+            )
             importance = feature_importance(final_model)
             if importance is not None:
                 importance.to_csv(tmp / "feature_importance.csv", index=False)

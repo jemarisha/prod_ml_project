@@ -16,7 +16,9 @@ def load_registered_model(model_name: str, alias: str) -> mlflow.pyfunc.PyFuncMo
     return mlflow.pyfunc.load_model(f"models:/{model_name}@{alias}")
 
 
-def predict_submission(model: mlflow.pyfunc.PyFuncModel, data: DataConfig, output: Path) -> pd.DataFrame:
+def predict_submission(
+    model: mlflow.pyfunc.PyFuncModel, data: DataConfig, output: Path
+) -> pd.DataFrame:
     dataset = load_dataset(data)
     submission = build_submission(dataset.test_ids, model.predict(dataset.test_messages))
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -24,7 +26,9 @@ def predict_submission(model: mlflow.pyfunc.PyFuncModel, data: DataConfig, outpu
     return submission
 
 
-def stream_dialog(model: mlflow.pyfunc.PyFuncModel, dialog_path: Path) -> list[tuple[int, str, float]]:
+def stream_dialog(
+    model: mlflow.pyfunc.PyFuncModel, dialog_path: Path
+) -> list[tuple[int, str, float]]:
     """Вероятность «бот» для автора каждой реплики по мере развития диалога.
 
     Модель видит только реплики до текущей включительно — так сервис будет

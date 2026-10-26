@@ -102,7 +102,9 @@ def _build_logreg(config: ModelConfig, numeric_columns: list[str], seed: int) ->
     )
 
 
-def _build_catboost(config: ModelConfig, numeric_columns: list[str], seed: int) -> CatBoostOnColumns:
+def _build_catboost(
+    config: ModelConfig, numeric_columns: list[str], seed: int
+) -> CatBoostOnColumns:
     columns = (list(numeric_columns) if config.use_handcrafted else []) + list(config.text_columns)
     if not columns:
         raise ValueError("catboost: не заданы ни ручные признаки, ни текстовые колонки")

@@ -29,7 +29,8 @@ def make_dialogs(n_dialogs: int = 24, prefix: str = "dialog") -> tuple[pd.DataFr
             messages.append({"text": text, "message": k, "participant_index": participant})
         dialogs[dialog_id] = messages
         labels += [
-            {"dialog_id": dialog_id, "participant_index": p, "is_bot": int(p == bot)} for p in (0, 1)
+            {"dialog_id": dialog_id, "participant_index": p, "is_bot": int(p == bot)}
+            for p in (0, 1)
         ]
     return dialogs_to_frame(dialogs), pd.DataFrame(labels)
 

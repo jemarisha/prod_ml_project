@@ -26,6 +26,8 @@ def test_participant_without_partner_is_unchanged():
 
 def test_output_is_a_valid_probability():
     rng = np.random.default_rng(0)
-    keys = pd.DataFrame({"dialog_id": np.repeat(np.arange(50), 2), "participant_index": [0, 1] * 50})
+    keys = pd.DataFrame(
+        {"dialog_id": np.repeat(np.arange(50), 2), "participant_index": [0, 1] * 50}
+    )
     result = exclusive_bot_normalize(keys, rng.uniform(0, 1, size=100))
     assert ((result > 0) & (result < 1)).all()

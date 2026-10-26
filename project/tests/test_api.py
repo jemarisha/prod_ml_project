@@ -10,7 +10,11 @@ class ConstantModel:
 
     def predict(self, messages: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame(
-            {"dialog_id": messages["dialog_id"].iloc[0], "participant_index": [0, 1], "is_bot": [0.2, 0.7]}
+            {
+                "dialog_id": messages["dialog_id"].iloc[0],
+                "participant_index": [0, 1],
+                "is_bot": [0.2, 0.7],
+            }
         )
 
 
@@ -28,10 +32,13 @@ def test_health(client):
 def test_predict_returns_probability_per_participant(client):
     response = client.post(
         "/predict",
-        json={"dialog_id": "d1", "messages": [
-            {"message": 0, "participant_index": 0, "text": "привет"},
-            {"message": 1, "participant_index": 1, "text": "привет"},
-        ]},
+        json={
+            "dialog_id": "d1",
+            "messages": [
+                {"message": 0, "participant_index": 0, "text": "привет"},
+                {"message": 1, "participant_index": 1, "text": "привет"},
+            ],
+        },
     )
     assert response.status_code == 200
     body = response.json()

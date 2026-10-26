@@ -18,7 +18,12 @@ EXAMPLE_MESSAGES = pd.DataFrame(
         "dialog_id": ["example"] * 4,
         "message": [0, 1, 2, 3],
         "participant_index": [0, 1, 0, 1],
-        "text": ["Привет!", "привет", "ты бот?", "Нет, конечно — я человек, просто печатаю быстро."],
+        "text": [
+            "Привет!",
+            "привет",
+            "ты бот?",
+            "Нет, конечно — я человек, просто печатаю быстро.",
+        ],
     }
 )
 
@@ -36,5 +41,8 @@ class DialogBotDetector(mlflow.pyfunc.PythonModel):
     def predict(self, context, model_input, params=None):
         """`model_input`: DataFrame с колонками dialog_id, message, participant_index, text."""
         return predict_participants(
-            self.estimator, pd.DataFrame(model_input), self.max_chars_per_message, self.exclusive_bot
+            self.estimator,
+            pd.DataFrame(model_input),
+            self.max_chars_per_message,
+            self.exclusive_bot,
         )

@@ -23,10 +23,14 @@ def _validate_data(args: argparse.Namespace) -> int:
     expected_path = settings.data.checksums_file
     if expected_path.exists():
         expected = read_expected_checksums(expected_path)
-        mismatched = sorted(name for name, digest in checksums.items() if expected.get(name) != digest)
+        mismatched = sorted(
+            name for name, digest in checksums.items() if expected.get(name) != digest
+        )
         if mismatched:
-            print(f"ВНИМАНИЕ: файлы отличаются от {expected_path}: {mismatched}. "
-                  "Результаты могут не совпасть с залогированными.")
+            print(
+                f"ВНИМАНИЕ: файлы отличаются от {expected_path}: {mismatched}. "
+                "Результаты могут не совпасть с залогированными."
+            )
         else:
             print(f"Контрольные суммы совпадают с {expected_path}")
     return 0
@@ -58,8 +62,10 @@ def _promote(args: argparse.Namespace) -> int:
     for item in promote_best_runs(
         settings.tracking.experiment_name, settings.tracking.registered_model_name, args.metric
     ):
-        print(f"{settings.tracking.registered_model_name}@{item.alias}: версия {item.version}, "
-              f"{item.run_name}, {args.metric} = {item.metric:.4f}")
+        print(
+            f"{settings.tracking.registered_model_name}@{item.alias}: версия {item.version}, "
+            f"{item.run_name}, {args.metric} = {item.metric:.4f}"
+        )
     return 0
 
 
@@ -71,8 +77,10 @@ def _predict(args: argparse.Namespace) -> int:
     configure_mlflow(settings.tracking.experiment_name)
     model = load_registered_model(settings.tracking.registered_model_name, args.alias)
     submission = predict_submission(model, settings.data, args.output)
-    print(f"Сабмит {args.output}: {len(submission)} строк, средняя P(бот) = "
-          f"{submission['is_bot'].mean():.3f}")
+    print(
+        f"Сабмит {args.output}: {len(submission)} строк, средняя P(бот) = "
+        f"{submission['is_bot'].mean():.3f}"
+    )
     return 0
 
 
@@ -90,7 +98,9 @@ def _demo(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="youarebot", description="Классификатор «бот или человек»")
+    parser = argparse.ArgumentParser(
+        prog="youarebot", description="Классификатор «бот или человек»"
+    )
     commands = parser.add_subparsers(dest="command", required=True)
 
     validate = commands.add_parser("validate-data", help="проверить контракт и версию данных")

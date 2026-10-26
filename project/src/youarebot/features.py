@@ -124,7 +124,9 @@ def _interaction_features(messages: pd.DataFrame) -> pd.DataFrame:
                 "self_repeat": norm != "" and norm in seen[participant],
                 "follows_self": prev_participant == participant,
                 "prev_similarity": (
-                    jaccard(char_trigrams(text), char_trigrams(prev_text)) if replies_to_other else 0.0
+                    jaccard(char_trigrams(text), char_trigrams(prev_text))
+                    if replies_to_other
+                    else 0.0
                 ),
             }
         )
@@ -140,14 +142,16 @@ def _message_features(messages: pd.DataFrame) -> pd.DataFrame:
     features["n_words"] = texts.map(lambda text: len(text.split()))
     letters = texts.map(lambda text: len(LETTER.findall(text))).clip(lower=1)
     features["upper_ratio"] = texts.map(lambda text: len(UPPER_LETTER.findall(text))) / letters
-    features["punct_ratio"] = texts.map(
-        lambda text: len(PUNCTUATION.findall(text))
-    ) / features["len_chars"].clip(lower=1)
+    features["punct_ratio"] = texts.map(lambda text: len(PUNCTUATION.findall(text))) / features[
+        "len_chars"
+    ].clip(lower=1)
     for name, pattern in MESSAGE_PATTERNS.items():
         features[name] = texts.map(lambda text, pattern=pattern: pattern.search(text) is not None)
     features["is_doubled"] = texts.map(is_doubled)
     features["is_empty"] = texts.map(lambda text: text.strip() == "")
-    features["is_all_lower"] = texts.map(lambda text: bool(LETTER.search(text)) and text == text.lower())
+    features["is_all_lower"] = texts.map(
+        lambda text: bool(LETTER.search(text)) and text == text.lower()
+    )
     return features.join(_interaction_features(messages)).join(_turn_features(messages, features))
 
 
@@ -196,9 +200,9 @@ def _aggregate_participants(messages: pd.DataFrame, per_message: pd.DataFrame) -
 
 def _participant_texts(messages: pd.DataFrame, max_chars_per_message: int) -> pd.DataFrame:
     clipped = messages["text"].astype(object).map(lambda text: text[:max_chars_per_message])
-    texts = clipped.groupby(
-        [messages["dialog_id"], messages["participant_index"]], sort=False
-    ).agg("\n".join)
+    texts = clipped.groupby([messages["dialog_id"], messages["participant_index"]], sort=False).agg(
+        "\n".join
+    )
     return texts.rename("text_self").reset_index()
 
 

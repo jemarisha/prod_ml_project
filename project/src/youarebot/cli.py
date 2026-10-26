@@ -37,7 +37,7 @@ def _run(args: argparse.Namespace) -> int:
 
     results = []
     for path in args.configs:
-        config = load_config(path)
+        config = load_config(path, overrides=args.overrides)
         print(f"==> {config.run_name}: {config.description}")
         result = run_experiment(config)
         print(f"    CV logloss = {result.cv_logloss:.4f}  (run_id {result.run_id})")
@@ -98,6 +98,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     run = commands.add_parser("run", help="провести эксперименты и залогировать их в MLflow")
     run.add_argument("configs", nargs="+", type=Path, help="YAML-файлы из configs/experiments")
+    run.add_argument(
+        "--set",
+        dest="overrides",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="переопределить параметр конфига, например model.params.C=2",
+    )
     run.set_defaults(handler=_run)
 
     promote = commands.add_parser("promote", help="назначить алиасы champion и challenger")

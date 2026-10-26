@@ -44,6 +44,19 @@ def test_cyrillic_letters_are_counted():
     assert by_participant.loc[1, "upper_ratio_mean"] == 0.0
 
 
+def test_turn_taking_features():
+    features = build_participant_features(
+        _dialog((0, "привет"), (1, "привет, как дела?"), (0, "ок"), (0, "ты тут?"))
+    )
+    by_participant = features.set_index("participant_index")
+    # Участник 0 получил ответ на 1 реплику из 3; участник 1 — на свою единственную.
+    assert by_participant.loc[0, "gets_reply_share"] == pytest.approx(1 / 3)
+    assert by_participant.loc[1, "gets_reply_share"] == 1.0
+    assert by_participant.loc[0, "max_run"] == 2
+    assert by_participant.loc[1, "reply_len_ratio_mean"] > 0  # ответил длиннее, чем ему написали
+    assert by_participant.loc[0, "first_is_greeting"] == 1.0
+
+
 def test_rows_follow_given_participants_order(synthetic):
     messages, labels = synthetic
     shuffled = labels.sample(frac=1, random_state=0)

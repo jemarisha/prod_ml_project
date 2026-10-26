@@ -109,11 +109,42 @@ def read_yaml(path: Path) -> dict[str, Any]:
         return yaml.safe_load(file) or {}
 
 
-def load_config(path: Path, base_path: Path | None = BASE_CONFIG_PATH) -> ExperimentConfig:
+def parse_override(assignment: str) -> tuple[str, Any]:
+    """`model.params.C=2` → ("model.params.C", 2); значение разбирается как YAML."""
+    key, sep, value = assignment.partition("=")
+    if not sep or not key:
+        raise ValueError(f"Ожидается KEY=VALUE, получено {assignment!r}")
+    return key.strip(), yaml.safe_load(value)
+
+
+def _set_dotted(raw: dict[str, Any], key: str, value: Any) -> None:
+    node = raw
+    *parents, leaf = key.split(".")
+    for part in parents:
+        node = node.setdefault(part, {})
+    node[leaf] = value
+
+
+def load_config(
+    path: Path,
+    base_path: Path | None = BASE_CONFIG_PATH,
+    overrides: list[str] | None = None,
+) -> ExperimentConfig:
+    """Конфиг эксперимента поверх base.yaml; `overrides` — правки вида `model.params.C=2`.
+
+    Каждая правка дописывается в имя запуска, чтобы варианты перебора
+    различались в MLflow и в реестре.
+    """
     raw: dict[str, Any] = {}
     if base_path is not None and base_path.exists():
         raw = read_yaml(base_path)
     raw = deep_merge(raw, read_yaml(path))
+    parsed = [parse_override(item) for item in overrides or []]
+    for key, value in parsed:
+        _set_dotted(raw, key, value)
+    if parsed:
+        suffix = ",".join(f"{key.rsplit('.', 1)[-1]}={value}" for key, value in parsed)
+        raw["run_name"] = f"{raw['run_name']}[{suffix}]"
     return ExperimentConfig.model_validate(raw)
 
 

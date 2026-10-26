@@ -43,7 +43,17 @@ MESSAGE_PATTERNS: dict[str, re.Pattern[str]] = {
         "has_laugh": r"(?i)(?:ха){2,}|(?:ah){2,}|lol|лол|\){2,}",
     }.items()
 }
-INTERACTION_FLAGS = ["is_echo", "echo_any", "self_repeat", "follows_self", "is_doubled", "is_empty"]
+INTERACTION_FLAGS = [
+    "is_echo",
+    "echo_any",
+    "self_repeat",
+    "follows_self",
+    "gets_reply",
+    "is_doubled",
+    "is_empty",
+    "is_all_lower",
+]
+GREETING = re.compile(r"(?i)^\W*(привет|здравств|добр|хай|ку\b|hi\b|hello|hey|салам|йо\b)")
 SHARE_FLAGS = [*MESSAGE_PATTERNS, *INTERACTION_FLAGS]
 
 # Для этих признаков дополнительно считается разница «участник минус собеседник».
@@ -137,7 +147,29 @@ def _message_features(messages: pd.DataFrame) -> pd.DataFrame:
         features[name] = texts.map(lambda text, pattern=pattern: pattern.search(text) is not None)
     features["is_doubled"] = texts.map(is_doubled)
     features["is_empty"] = texts.map(lambda text: text.strip() == "")
-    return features.join(_interaction_features(messages))
+    features["is_all_lower"] = texts.map(lambda text: bool(LETTER.search(text)) and text == text.lower())
+    return features.join(_interaction_features(messages)).join(_turn_features(messages, features))
+
+
+def _turn_features(messages: pd.DataFrame, per_message: pd.DataFrame) -> pd.DataFrame:
+    """Ритм диалога: бот отвечает на каждую реплику и подстраивает длину ответа."""
+    by_dialog = messages.groupby("dialog_id", sort=False)
+    participant = messages["participant_index"]
+    prev_participant = by_dialog["participant_index"].shift(1)
+    next_participant = by_dialog["participant_index"].shift(-1)
+    log_len = np.log1p(per_message["len_chars"])
+    prev_log_len = log_len.groupby(messages["dialog_id"], sort=False).shift(1)
+    replies = prev_participant.notna() & (prev_participant != participant)
+    new_run = (participant != prev_participant) | prev_participant.isna()
+    run_id = new_run.cumsum()
+    return pd.DataFrame(
+        {
+            "gets_reply": next_participant.notna() & (next_participant != participant),
+            "reply_len_ratio": (log_len - prev_log_len).where(replies),
+            "run_length": run_id.groupby(run_id).cumcount() + 1,
+        },
+        index=messages.index,
+    )
 
 
 def _aggregate_participants(messages: pd.DataFrame, per_message: pd.DataFrame) -> pd.DataFrame:
@@ -153,6 +185,12 @@ def _aggregate_participants(messages: pd.DataFrame, per_message: pd.DataFrame) -
     aggregated["punct_ratio_mean"] = grouped["punct_ratio"].mean()
     aggregated["prev_similarity_mean"] = grouped["prev_similarity"].mean()
     aggregated["prev_similarity_max"] = grouped["prev_similarity"].max()
+    aggregated["reply_len_ratio_mean"] = grouped["reply_len_ratio"].mean().fillna(0.0)
+    aggregated["max_run"] = grouped["run_length"].max()
+    first_text = messages.groupby(PARTICIPANT_KEY, sort=False)["text"].first().astype(object)
+    aggregated["first_log_len"] = np.log1p(first_text.map(len))
+    aggregated["first_is_greeting"] = first_text.map(lambda text: GREETING.search(text) is not None)
+    aggregated["first_is_greeting"] = aggregated["first_is_greeting"].astype(float)
     return aggregated.reset_index()
 
 

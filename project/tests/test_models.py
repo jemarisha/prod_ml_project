@@ -54,6 +54,17 @@ def test_mlflow_wrapper_scores_both_participants_of_each_dialog(synthetic):
     assert (per_dialog < 1).all()
 
 
+def test_override_changes_param_and_run_name():
+    config = load_config(
+        PROJECT_ROOT / "configs" / "experiments" / "03_logreg_tfidf_features.yaml",
+        base_path=PROJECT_ROOT / "configs" / "base.yaml",
+        overrides=["model.params.C=0.25", "cv.n_splits=3"],
+    )
+    assert config.model.params["C"] == 0.25
+    assert config.cv.n_splits == 3
+    assert config.run_name == "03_logreg_tfidf_features[C=0.25,n_splits=3]"
+
+
 @pytest.mark.parametrize("path", sorted((PROJECT_ROOT / "configs" / "experiments").glob("*.yaml")))
 def test_experiment_configs_are_valid(path):
     config = load_config(path, base_path=PROJECT_ROOT / "configs" / "base.yaml")

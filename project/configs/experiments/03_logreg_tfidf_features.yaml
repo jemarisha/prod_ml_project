@@ -1,0 +1,11 @@
+run_name: 03_logreg_tfidf_features
+description: TF-IDF своих и чужих реплик + ручные признаки (эхо, пунктуация, структура диалога).
+model:
+  type: logreg
+  use_handcrafted: true
+  tfidf:
+    - {column: text_self, analyzer: word, ngram_range: [1, 2], min_df: 2, max_features: 20000, lowercase: true}
+    - {column: text_self, analyzer: char_wb, ngram_range: [2, 5], min_df: 3, max_features: 50000, lowercase: false}
+    - {column: text_other, analyzer: word, ngram_range: [1, 1], min_df: 3, max_features: 10000, lowercase: true}
+  params:
+    C: 0.5

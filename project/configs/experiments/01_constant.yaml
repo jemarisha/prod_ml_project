@@ -1,0 +1,4 @@
+run_name: 01_constant_prior
+description: Нижняя граница — всем участникам доля ботов из train.
+model:
+  type: constant

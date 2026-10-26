@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[oc]
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Данные соревнования не распространяются (см. data/README.md)
+data/raw/*
+!data/raw/.gitkeep
+
+# Результаты запусков: воспроизводятся скриптом run_experiment.sh
+mlflow.db
+mlflow.db-*
+mlruns/
+mlartifacts/
+submissions/
+catboost_info/
+
+# Секреты
+.env

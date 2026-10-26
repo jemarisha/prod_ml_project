@@ -1,0 +1,44 @@
+{
+  "cdc2c5c605144c8e8dd5e9ea3d1352fc": [
+    {
+      "message": 0,
+      "text": "Hi!",
+      "participant_index": "0"
+    },
+    {
+      "message": 1,
+      "text": "hi",
+      "participant_index": "1"
+    },
+    {
+      "message": 2,
+      "text": "ты бот?",
+      "participant_index": "0"
+    },
+    {
+      "message": 3,
+      "text": "Да, я бот!",
+      "participant_index": "1"
+    },
+    {
+      "message": 4,
+      "text": "Понял Вас",
+      "participant_index": "0"
+    },
+    {
+      "message": 5,
+      "text": "А вы?",
+      "participant_index": "1"
+    },
+    {
+      "message": 6,
+      "text": "а Вы?",
+      "participant_index": "0"
+    },
+    {
+      "message": 7,
+      "text": "Вы бот?",
+      "participant_index": "1"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+# Общие настройки всех экспериментов. Файлы из configs/experiments/
+# накладываются поверх этого файла и задают модель.
+seed: 42
+
+data:
+  raw_dir: data/raw
+  train_dialogs: train.json
+  train_labels: ytrain.csv
+  test_dialogs: test.json
+  test_ids: ytest.csv
+  checksums_file: data/checksums.sha256
+
+features:
+  max_chars_per_message: 1000
+
+cv:
+  n_splits: 5
+
+postprocess:
+  # В train нет диалогов с двумя ботами, и постобработка может это учесть.
+  # Но моделям с признаками собеседника она вредит: структура пары уже учтена,
+  # повторный учёт делает прогноз переуверенным (см. oof_raw_* против oof_* в MLflow).
+  exclusive_bot: false
+
+tracking:
+  experiment_name: youarebot
+  registered_model_name: youarebot
+  log_model: true

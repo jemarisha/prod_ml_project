@@ -1,0 +1,10 @@
+run_name: 04_catboost_features
+description: CatBoost только на ручных признаках участника и собеседника.
+model:
+  type: catboost
+  use_handcrafted: true
+  params:
+    iterations: 800
+    learning_rate: 0.03
+    depth: 6
+    l2_leaf_reg: 5

@@ -1,0 +1,13 @@
+run_name: 02_logreg_tfidf
+description: Только текст участника — TF-IDF по словам и символам + логистическая регрессия.
+model:
+  type: logreg
+  use_handcrafted: false
+  tfidf:
+    - {column: text_self, analyzer: word, ngram_range: [1, 2], min_df: 2, max_features: 20000, lowercase: true}
+    - {column: text_self, analyzer: char_wb, ngram_range: [2, 5], min_df: 3, max_features: 50000, lowercase: false}
+  params:
+    C: 1.0
+postprocess:
+  # Модель не видит собеседника, поэтому знание «двух ботов не бывает» ей помогает.
+  exclusive_bot: true

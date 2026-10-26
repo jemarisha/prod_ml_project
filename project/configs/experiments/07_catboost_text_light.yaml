@@ -1,0 +1,20 @@
+run_name: 07_catboost_text_light
+description: Как 05, но тексты кодируются только NaiveBayes и BM25 без мешка слов — в разы быстрее.
+model:
+  type: catboost
+  use_handcrafted: true
+  text_columns: [text_self, text_other]
+  params:
+    iterations: 800
+    learning_rate: 0.03
+    depth: 6
+    l2_leaf_reg: 5
+    text_processing:
+      tokenizers:
+        - {tokenizer_id: Space, separator_type: ByDelimiter, delimiter: " ", lowercasing: "true"}
+      dictionaries:
+        - {dictionary_id: Word, max_dictionary_size: "5000", occurrence_lower_bound: "3", gram_order: "1"}
+        - {dictionary_id: BiGram, max_dictionary_size: "5000", occurrence_lower_bound: "3", gram_order: "2"}
+      feature_processing:
+        default:
+          - {dictionaries_names: [Word, BiGram], feature_calcers: [NaiveBayes, BM25], tokenizers_names: [Space]}

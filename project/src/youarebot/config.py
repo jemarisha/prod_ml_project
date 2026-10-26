@@ -48,8 +48,10 @@ class TfidfConfig(StrictModel):
 
 
 class ModelConfig(StrictModel):
-    type: Literal["constant", "logreg", "catboost", "blend"]
+    type: Literal["constant", "logreg", "catboost", "blend", "stack"]
     use_handcrafted: bool = True
+    # Для компонент стекинга: учиться ли на началах диалогов (если они включены в augment).
+    use_prefixes: bool = True
     tfidf: list[TfidfConfig] = Field(default_factory=list)
     text_columns: list[str] = Field(default_factory=list)
     params: dict[str, Any] = Field(default_factory=dict)
@@ -59,6 +61,12 @@ class ModelConfig(StrictModel):
 
 class CVConfig(StrictModel):
     n_splits: int = Field(default=5, ge=2)
+
+
+class AugmentConfig(StrictModel):
+    # Начала диалогов как дополнительные обучающие примеры (0 — выключено).
+    prefixes_per_dialog: int = Field(default=0, ge=0)
+    prefix_weight: float = Field(default=0.5, gt=0, le=1)
 
 
 class PostprocessConfig(StrictModel):
@@ -80,6 +88,7 @@ class ExperimentConfig(StrictModel):
     features: FeatureConfig = Field(default_factory=FeatureConfig)
     cv: CVConfig = Field(default_factory=CVConfig)
     model: ModelConfig
+    augment: AugmentConfig = Field(default_factory=AugmentConfig)
     postprocess: PostprocessConfig = Field(default_factory=PostprocessConfig)
     tracking: TrackingConfig = Field(default_factory=TrackingConfig)
 

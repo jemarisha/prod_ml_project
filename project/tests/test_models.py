@@ -24,6 +24,14 @@ MODEL_CONFIGS = {
             ModelConfig(type="catboost", params=FAST_CATBOOST),
         ],
     ),
+    "stack": ModelConfig(
+        type="stack",
+        params={"n_splits": 3},
+        components=[
+            ModelConfig(type="logreg", tfidf=TFIDF),
+            ModelConfig(type="catboost", params=FAST_CATBOOST, use_prefixes=False),
+        ],
+    ),
 }
 
 

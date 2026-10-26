@@ -17,9 +17,11 @@ from sklearn.base import ClassifierMixin, clone
 from sklearn.model_selection import StratifiedGroupKFold
 
 import youarebot
+from youarebot.augment import make_prefixes, source_dialog
 from youarebot.config import ExperimentConfig, flatten_params
 from youarebot.data import (
     PARTICIPANT_KEY,
+    Dataset,
     data_checksums,
     data_version,
     load_dataset,
@@ -54,9 +56,60 @@ class ExperimentResult:
     model_uri: str | None
 
 
+@dataclass(frozen=True)
+class Augmentation:
+    """Дополнительные обучающие строки (начала диалогов) и их исходные диалоги."""
+
+    features: pd.DataFrame
+    target: np.ndarray
+    weight: np.ndarray
+    source: np.ndarray
+
+
 def set_global_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
+
+
+def build_augmentation(dataset: Dataset, config: ExperimentConfig) -> Augmentation | None:
+    if not config.augment.prefixes_per_dialog:
+        return None
+    prefixes = make_prefixes(
+        dataset.train_messages,
+        dataset.train_labels,
+        config.augment.prefixes_per_dialog,
+        config.seed,
+    )
+    features = build_participant_features(
+        prefixes.messages, config.features.max_chars_per_message, participants=prefixes.labels
+    ).merge(prefixes.labels, on=PARTICIPANT_KEY, how="left", validate="one_to_one")
+    target = features.pop("is_bot").to_numpy()
+    return Augmentation(
+        features=features,
+        target=target,
+        weight=np.full(len(target), config.augment.prefix_weight),
+        source=source_dialog(features["dialog_id"]).to_numpy(),
+    )
+
+
+def fit_model(
+    model: ClassifierMixin,
+    features: pd.DataFrame,
+    target: np.ndarray,
+    augmentation: Augmentation | None = None,
+    dialogs: set[str] | None = None,
+) -> ClassifierMixin:
+    """Обучает копию модели; начала диалогов берутся только из `dialogs` (по умолчанию — все)."""
+    if augmentation is None:
+        return clone(model).fit(features, target)
+    keep = np.ones(len(augmentation.target), dtype=bool)
+    if dialogs is not None:
+        keep = np.isin(augmentation.source, list(dialogs))
+    return clone(model).fit(
+        pd.concat([features, augmentation.features[keep]], ignore_index=True),
+        np.concatenate([target, augmentation.target[keep]]),
+        sample_weight=np.concatenate([np.ones(len(target)), augmentation.weight[keep]]),
+    )
 
 
 def cross_validate_oof(
@@ -65,11 +118,14 @@ def cross_validate_oof(
     target: np.ndarray,
     n_splits: int,
     seed: int,
+    augmentation: Augmentation | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Out-of-fold вероятности и номер фолда для каждой строки.
 
     Разбиение групповое по `dialog_id`: оба участника диалога попадают в один фолд,
     иначе модель видела бы собеседника на обучении, а оценка была бы завышена.
+    Начала диалогов добавляются только из обучающей части фолда, а качество
+    считается на целых диалогах.
     """
     oof = np.zeros(len(target))
     folds = np.full(len(target), -1)
@@ -77,7 +133,14 @@ def cross_validate_oof(
     for fold, (train_idx, valid_idx) in enumerate(
         splitter.split(features, target, groups=features["dialog_id"])
     ):
-        fitted = clone(model).fit(features.iloc[train_idx], target[train_idx])
+        train_part = features.iloc[train_idx]
+        fitted = fit_model(
+            model,
+            train_part,
+            target[train_idx],
+            augmentation,
+            dialogs=set(train_part["dialog_id"]),
+        )
         oof[valid_idx] = positive_proba(fitted, features.iloc[valid_idx])
         folds[valid_idx] = fold
     return oof, folds
@@ -113,14 +176,17 @@ def run_experiment(config: ExperimentConfig) -> ExperimentResult:
     target = train.pop("is_bot").to_numpy()
     numeric_columns = numeric_feature_columns(train)
     model = build_model(config.model, numeric_columns, config.seed)
+    augmentation = build_augmentation(dataset, config)
 
     started = time.perf_counter()
-    oof_raw, folds = cross_validate_oof(model, train, target, config.cv.n_splits, config.seed)
+    oof_raw, folds = cross_validate_oof(
+        model, train, target, config.cv.n_splits, config.seed, augmentation
+    )
     cv_seconds = time.perf_counter() - started
     oof = exclusive_bot_normalize(train, oof_raw) if exclusive else oof_raw
 
     started = time.perf_counter()
-    final_model = clone(model).fit(train, target)
+    final_model = fit_model(model, train, target, augmentation)
     fit_seconds = time.perf_counter() - started
     train_proba = positive_proba(final_model, train)
     if exclusive:
@@ -138,6 +204,7 @@ def run_experiment(config: ExperimentConfig) -> ExperimentResult:
         **_prefixed(classification_metrics(target, train_proba), "train"),
         **_prefixed(data_quality_report(dataset), "data"),
         "n_features_numeric": float(len(numeric_columns)),
+        "n_augmented_rows": float(0 if augmentation is None else len(augmentation.target)),
         "cv_seconds": cv_seconds,
         "final_fit_seconds": fit_seconds,
         # Названия из ДЗ 3: val_* — это out-of-fold оценка кросс-валидации.
